@@ -655,3 +655,8 @@ CONFIG_boost-compile-visibility-hidden=y
 CONFIG_boost-runtime-shared=y
 CONFIG_boost-static-and-shared-libs=y
 CONFIG_boost-variant-release=y
+# Disable problematic packages with recursive dependencies and hash issues
+# CONFIG_PACKAGE_luci-app-pcimodem is not set
+# CONFIG_PACKAGE_luci-proto-quectel is not set
+# CONFIG_PACKAGE_quectel-cm is not set
+# CONFIG_PACKAGE_quectel-CM-5G is not set
