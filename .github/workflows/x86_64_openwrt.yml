@@ -105,14 +105,18 @@ jobs:
       run: |
         cd openwrt
         echo -e "$(nproc) thread compile"
-        make -j$(nproc) || make -j1 || make -j1 V=s
-        echo "date1=$(date +'%Y.%m.%d')" >> $GITHUB_ENV
-        echo "date2=$(date "+%Y年%m月%d日")" >> $GITHUB_ENV
-        echo "status=success" >> $GITHUB_OUTPUT
+        if make -j$(nproc) || make -j1 || make -j1 V=s; then
+          echo "date1=$(date +'%Y.%m.%d')" >> $GITHUB_ENV
+          echo "date2=$(date "+%Y年%m月%d日")" >> $GITHUB_ENV
+          echo "status=success" >> $GITHUB_OUTPUT
+        else
+          echo "status=failure" >> $GITHUB_OUTPUT
+          exit 1
+        fi
 
     - name: Organize and Rename Files
       id: organize
-      if: ${{ env.UPLOAD_FIRMWARE == 'true' && !cancelled() }}
+      if: steps.compile.outputs.status == 'success' && !cancelled()
       run: |
         cd openwrt/bin/targets/x86/64
         rm -rf packages *.bin *.config *.buildinfo *.json sha256sums *.manifest
@@ -121,7 +125,7 @@ jobs:
         
     - name: Upload the firmware to github
       uses: actions/upload-artifact@main
-      if: steps.organize.outputs.status == 'success' && !cancelled()
+      if: steps.compile.outputs.status == 'success' && steps.organize.outputs.status == 'success' && !cancelled()
       with:
         name: ${{ env.date1 }}_${{ env.OPENWRT_NAME }}_${{ env.OPENWRT_NAME1 }}
         path: ${{ env.FIRMWARE }}
@@ -130,7 +134,7 @@ jobs:
       id: tag
       if: env.UPLOAD_RELEASE == 'true' && !cancelled()
       run: |
-        echo "release_tag=${{ env.date2 }}" >> $GITHUB_OUTPUT
+        echo "release_tag=${{ env.date1 }}" >> $GITHUB_OUTPUT
         touch release.txt
         echo "📥 固件下载" >> release.txt
         echo "status=success" >> $GITHUB_OUTPUT
